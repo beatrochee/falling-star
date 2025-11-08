@@ -147,7 +147,6 @@
 
         const catchButton = document.getElementById('catchButton');
         const letGoButton = document.getElementById('letGoButton');
-        const resetButton = document.getElementById('resetButton');
         
         const introDiv = document.getElementById('intro');
         const luckScreen = document.getElementById('luck-screen');
@@ -232,20 +231,7 @@
                 introDiv.style.display = 'none';
             }, 1500);
         });
-        
-        // --- Reset from Luck Screen ---
-        resetButton.addEventListener('click', () => {
-            localStorage.removeItem(STORAGE_KEY); // Clear the choice
-            
-            luckScreen.style.opacity = '0';
-            luckScreen.style.pointerEvents = 'none';
-
-            showIntro(); // Show the intro again
-
-            setTimeout(() => {
-                luckScreen.style.display = 'none';
-            }, 1500);
-        });
+    
 
         // --- ON PAGE LOAD ---
         function checkSavedChoice() {
