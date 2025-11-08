@@ -43,18 +43,23 @@
             z-index: 10;
         }
         
-        /* New Luck Screen */
+        /* Luck Screen */
         #luck-screen {
             z-index: 9;
         }
+
+        /* NEW Caught Screen */
+        #caught-screen {
+            z-index: 9;
+        }
         
-        #intro h2, #luck-screen h2 {
+        #intro h2, #luck-screen h2, #caught-screen h2 {
             font-size: 24px;
             font-weight: 500;
             margin: 0;
             color: #ffeeb5;
         }
-        #intro p, #luck-screen p {
+        #intro p, #luck-screen p, #caught-screen p {
             font-size: 16px;
             color: #eee;
             margin: 12px 0 24px 0;
@@ -113,6 +118,58 @@
             z-index: 8;
             pointer-events: none;
         }
+
+        /* --- SPARKLE ANIMATION --- */
+        .spark-container {
+            width: 100px;
+            height: 60px; /* Give it some space */
+            position: relative;
+            margin: 10px 0 10px 0; /* Pull it closer to the text */
+            filter: blur(1px); /* Softens the whole effect */
+        }
+        .spark {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #ffeeb5; /* Warm star color */
+            border-radius: 50%;
+            box-shadow: 0 0 10px 0px #ffeeb5,
+                        0 0 15px 0px #ffc1a0;
+            animation: sparkle 2.5s infinite ease-in-out;
+            opacity: 0;
+        }
+        
+        .spark:nth-child(1) {
+            top: 30%;
+            left: 45%;
+            animation-delay: 0s;
+        }
+        .spark:nth-child(2) {
+            top: 50%;
+            left: 30%;
+            animation-delay: 0.8s;
+            transform: scale(0.8);
+        }
+        .spark:nth-child(3) {
+            top: 40%;
+            left: 65%;
+            animation-delay: 1.5s;
+            transform: scale(1.1);
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0.5) translateY(10px);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2) translateY(-10px);
+                box-shadow: 0 0 15px 5px #ffeeb5,
+                            0 0 25px 10px #ffc1a0;
+            }
+        }
+        /* --- END SPARKLE ANIMATION --- */
     </style>
 </head>
 <body>
@@ -122,16 +179,30 @@
         <h2>You see a falling star.</h2>
         <p>Do you catch it?</p>
         <div class="button-container">
-            <button id="catchButton" class="choice-button">Catch it</button>
-            <button id="letGoButton" class="choice-button">Let it be free</button>
+            <button id="catchButton" class="choice-button">Yes</button>
+            <button id="letGoButton" class="choice-button">No</button>
         </div>
     </div>
 
     <!-- Luck Screen -->
     <div id="luck-screen" class="screen">
         <h2>You let the star go.</h2>
-        <p>You have made a new friend. It streaks across the sky, leaving a tiny, warm spark behind in your palm.</p>
-        <p class="luck-message">It is all the luck you need for this year. Look for your friend again one year from today.</p>
+        <p>You have made a new friend. It streaks across the sky, leaving three tiny, warm sparks behind in your palm.</p>
+        
+        <div class="spark-container">
+            <div class="spark"></div>
+            <div class="spark"></div>
+            <div class="spark"></div>
+        </div>
+
+        <p class="luck-message">They are all the luck you need for this year. Look to the skies again one year from today.</p>
+    </div>
+
+    <!-- NEW Caught Screen -->
+    <div id="caught-screen" class="screen">
+        <h2>You caught the falling star!</h2>
+        <p>It burns brightly in your hand. You will have luck for as long as it burns.</p>
+        <button id="viewStarButton" class="choice-button">View the star</button>
     </div>
 
     <canvas id="c"></canvas>
@@ -141,15 +212,17 @@
         import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
         import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 
-        // --- NEW: Interaction & Storage Logic ---
+        // --- Interaction & Storage Logic ---
         const STORAGE_KEY = 'ethereal_star_choice';
         const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
         const catchButton = document.getElementById('catchButton');
         const letGoButton = document.getElementById('letGoButton');
+        const viewStarButton = document.getElementById('viewStarButton'); // New button
         
         const introDiv = document.getElementById('intro');
         const luckScreen = document.getElementById('luck-screen');
+        const caughtScreen = document.getElementById('caught-screen'); // New screen
         const canvas = document.querySelector('#c');
 
         let sceneStarted = false;
@@ -197,6 +270,15 @@
             }, 50);
         }
 
+        // NEW function for the caught screen
+        function showCaughtScreen() {
+            caughtScreen.style.display = 'flex';
+            setTimeout(() => {
+                caughtScreen.style.opacity = '1';
+                caughtScreen.style.pointerEvents = 'auto';
+            }, 50);
+        }
+
         function showStarScene() {
             canvas.style.opacity = '1';
             canvas.style.pointerEvents = 'auto';
@@ -212,7 +294,7 @@
             introDiv.style.pointerEvents = 'none';
             
             saveChoice('caught');
-            showStarScene();
+            showCaughtScreen(); // Show caught screen instead of star
 
             setTimeout(() => {
                 introDiv.style.display = 'none';
@@ -231,14 +313,25 @@
                 introDiv.style.display = 'none';
             }, 1500);
         });
-    
+        
+        // --- NEW: View Star from Caught Screen ---
+        viewStarButton.addEventListener('click', () => {
+            caughtScreen.style.opacity = '0';
+            caughtScreen.style.pointerEvents = 'none';
 
+            showStarScene(); // Now show the star
+
+            setTimeout(() => {
+                caughtScreen.style.display = 'none';
+            }, 1500);
+        });
+    
         // --- ON PAGE LOAD ---
         function checkSavedChoice() {
             const savedChoice = loadChoice();
             if (savedChoice) {
                 if (savedChoice.choice === 'caught') {
-                    showStarScene();
+                    showCaughtScreen(); // Show caught screen on load
                 } else if (savedChoice.choice === 'free') {
                     showLuckScreen();
                 }
