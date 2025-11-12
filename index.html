@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falling Star</title>
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌠</text></svg>">
     <style>
         body, html { 
@@ -33,39 +34,28 @@
             transition: opacity 1.5s ease;
             padding: 20px;
             box-sizing: border-box;
-            /* Start all screens as hidden, JS will manage them */
             opacity: 0;
             display: none;
             pointer-events: none;
         }
 
-        /* Intro Screen */
-        #intro {
-            z-index: 10;
-        }
+        #intro { z-index: 10; }
+        #luck-screen { z-index: 9; }
+        #caught-screen { z-index: 9; }
         
-        /* Luck Screen */
-        #luck-screen {
-            z-index: 9;
-        }
-
-        /* NEW Caught Screen */
-        #caught-screen {
-            z-index: 9;
-        }
-        
-        #intro h2, #luck-screen h2, #caught-screen h2 {
+        h2 {
             font-size: 24px;
             font-weight: 500;
             margin: 0;
             color: #ffeeb5;
         }
-        #intro p, #luck-screen p, #caught-screen p {
+        p {
             font-size: 16px;
             color: #eee;
             margin: 12px 0 24px 0;
             opacity: 0.8;
             max-width: 300px;
+            line-height: 1.5;
         }
         
         .luck-message {
@@ -123,54 +113,29 @@
         /* --- SPARKLE ANIMATION --- */
         .spark-container {
             width: 100px;
-            height: 60px; /* Give it some space */
+            height: 60px;
             position: relative;
-            margin: 10px 0 10px 0; /* Pull it closer to the text */
-            filter: blur(1px); /* Softens the whole effect */
+            margin: 10px 0 10px 0;
+            filter: blur(1px);
         }
         .spark {
             position: absolute;
             width: 6px;
             height: 6px;
-            background: #ffeeb5; /* Warm star color */
+            background: #ffeeb5;
             border-radius: 50%;
-            box-shadow: 0 0 10px 0px #ffeeb5,
-                        0 0 15px 0px #ffc1a0;
+            box-shadow: 0 0 10px 0px #ffeeb5, 0 0 15px 0px #ffc1a0;
             animation: sparkle 2.5s infinite ease-in-out;
             opacity: 0;
         }
-        
-        .spark:nth-child(1) {
-            top: 30%;
-            left: 45%;
-            animation-delay: 0s;
-        }
-        .spark:nth-child(2) {
-            top: 50%;
-            left: 30%;
-            animation-delay: 0.8s;
-            transform: scale(0.8);
-        }
-        .spark:nth-child(3) {
-            top: 40%;
-            left: 65%;
-            animation-delay: 1.5s;
-            transform: scale(1.1);
-        }
+        .spark:nth-child(1) { top: 30%; left: 45%; animation-delay: 0s; }
+        .spark:nth-child(2) { top: 50%; left: 30%; animation-delay: 0.8s; transform: scale(0.8); }
+        .spark:nth-child(3) { top: 40%; left: 65%; animation-delay: 1.5s; transform: scale(1.1); }
 
         @keyframes sparkle {
-            0%, 100% {
-                opacity: 0;
-                transform: scale(0.5) translateY(10px);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.2) translateY(-10px);
-                box-shadow: 0 0 15px 5px #ffeeb5,
-                            0 0 25px 10px #ffc1a0;
-            }
+            0%, 100% { opacity: 0; transform: scale(0.5) translateY(10px); }
+            50% { opacity: 1; transform: scale(1.2) translateY(-10px); box-shadow: 0 0 15px 5px #ffeeb5, 0 0 25px 10px #ffc1a0; }
         }
-        /* --- END SPARKLE ANIMATION --- */
     </style>
 </head>
 <body>
@@ -180,8 +145,8 @@
         <h2>You see a falling star.</h2>
         <p>Do you catch it?</p>
         <div class="button-container">
-            <button id="catchButton" class="choice-button">Yes</button>
-            <button id="letGoButton" class="choice-button">No</button>
+            <button id="catchButton" class="choice-button">Catch it</button>
+            <button id="letGoButton" class="choice-button">Let it be free</button>
         </div>
     </div>
 
@@ -189,17 +154,13 @@
     <div id="luck-screen" class="screen">
         <h2>You let the star go.</h2>
         <p>You have made a new friend. It streaks across the sky, leaving three tiny, warm sparks behind in your palm.</p>
-        
         <div class="spark-container">
-            <div class="spark"></div>
-            <div class="spark"></div>
-            <div class="spark"></div>
+            <div class="spark"></div><div class="spark"></div><div class="spark"></div>
         </div>
-
         <p class="luck-message">They are all the luck you need for this year. Look to the skies again one year from today.</p>
     </div>
 
-    <!-- NEW Caught Screen -->
+    <!-- Caught Screen -->
     <div id="caught-screen" class="screen">
         <h2>You caught the falling star!</h2>
         <p>It burns brightly in your hand. You will have luck for as long as it burns.</p>
@@ -209,146 +170,182 @@
     <canvas id="c"></canvas>
 
     <script type="module">
-        // Imports (Known Good)
         import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
         import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 
-        // --- Interaction & Storage Logic ---
+        // --- DEBUGGING ---
+        // Set this to a number (e.g., 4 or 9) to simulate days passed.
+        // Set to null for real logic.
+        const DEBUG_DAYS_PASSED = null; 
+
+        // --- Storage Logic ---
         const STORAGE_KEY = 'ethereal_star_choice';
         const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
         const catchButton = document.getElementById('catchButton');
         const letGoButton = document.getElementById('letGoButton');
-        const viewStarButton = document.getElementById('viewStarButton'); // New button
+        const viewStarButton = document.getElementById('viewStarButton');
         
         const introDiv = document.getElementById('intro');
         const luckScreen = document.getElementById('luck-screen');
-        const caughtScreen = document.getElementById('caught-screen'); // New screen
+        const caughtScreen = document.getElementById('caught-screen');
         const canvas = document.querySelector('#c');
 
         let sceneStarted = false;
 
         function saveChoice(choice) {
-            const data = {
-                choice: choice,
-                timestamp: Date.now()
-            };
+            const data = { choice: choice, timestamp: Date.now() };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
         function loadChoice() {
             try {
                 const dataStr = localStorage.getItem(STORAGE_KEY);
-                if (!dataStr) {
-                    return null;
-                }
+                if (!dataStr) return null;
                 const data = JSON.parse(dataStr);
-                // Check if it's been a year
                 if (Date.now() - data.timestamp > ONE_YEAR_MS) {
                     localStorage.removeItem(STORAGE_KEY);
-                    return null; // Choice expired
+                    return null; 
                 }
-                return data; // Choice is valid
-            } catch (e) {
-                console.error("Error loading choice:", e);
-                return null;
-            }
+                return data;
+            } catch (e) { return null; }
         }
 
-        function showIntro() {
-            introDiv.style.display = 'flex';
+        // --- Screen Management ---
+        function showScreen(screen) {
+            screen.style.display = 'flex';
             setTimeout(() => {
-                introDiv.style.opacity = '1';
-                introDiv.style.pointerEvents = 'auto';
+                screen.style.opacity = '1';
+                screen.style.pointerEvents = 'auto';
             }, 50);
         }
-
-        function showLuckScreen() {
-            luckScreen.style.display = 'flex';
+        function hideScreen(screen) {
+            screen.style.opacity = '0';
+            screen.style.pointerEvents = 'none';
             setTimeout(() => {
-                luckScreen.style.opacity = '1';
-                luckScreen.style.pointerEvents = 'auto';
-            }, 50);
+                screen.style.display = 'none';
+            }, 1500);
         }
 
-        // NEW function for the caught screen
-        function showCaughtScreen() {
-            caughtScreen.style.display = 'flex';
-            setTimeout(() => {
-                caughtScreen.style.opacity = '1';
-                caughtScreen.style.pointerEvents = 'auto';
-            }, 50);
-        }
-
-        function showStarScene() {
+        function showStarScene(daysPassed) {
             canvas.style.opacity = '1';
             canvas.style.pointerEvents = 'auto';
             if (!sceneStarted) {
-                startScene();
+                startScene(daysPassed);
                 sceneStarted = true;
             }
         }
 
-        // --- Choice 1: Catch the Star ---
+        // --- Event Listeners ---
         catchButton.addEventListener('click', () => {
-            introDiv.style.opacity = '0';
-            introDiv.style.pointerEvents = 'none';
-            
+            hideScreen(introDiv);
             saveChoice('caught');
-            showCaughtScreen(); // Show caught screen instead of star
+            showScreen(caughtScreen);
 
-            setTimeout(() => {
-                introDiv.style.display = 'none';
-            }, 1500);
+            // --- NEW FIX ---
+            // We must update the viewStarButton's listener *now*
+            // to respect the debug flag on the first-time click.
+            let daysPassed = 0;
+            if (DEBUG_DAYS_PASSED !== null) daysPassed = DEBUG_DAYS_PASSED;
+            
+            // Clone/replace to ensure we have a fresh listener
+            const newBtn = viewStarButton.cloneNode(true);
+            viewStarButton.parentNode.replaceChild(newBtn, viewStarButton);
+            newBtn.addEventListener('click', () => {
+                hideScreen(caughtScreen);
+                showStarScene(daysPassed);
+            });
+            // --- END FIX ---
         });
 
-        // --- Choice 2: Let it Go ---
         letGoButton.addEventListener('click', () => {
-            introDiv.style.opacity = '0';
-            introDiv.style.pointerEvents = 'none';
-
+            hideScreen(introDiv);
             saveChoice('free');
-            showLuckScreen();
+            showScreen(luckScreen);
 
             setTimeout(() => {
-                introDiv.style.display = 'none';
             }, 1500);
         });
         
-        // --- NEW: View Star from Caught Screen ---
-        viewStarButton.addEventListener('click', () => {
-            caughtScreen.style.opacity = '0';
-            caughtScreen.style.pointerEvents = 'none';
-
-            showStarScene(); // Now show the star
-
-            setTimeout(() => {
-                caughtScreen.style.display = 'none';
-            }, 1500);
-        });
+        // REMOVED old, buggy 'viewStarButton' listener.
+        // It is now correctly handled by 'catchButton' and 'checkSavedChoice'.
     
-        // --- ON PAGE LOAD ---
+        // --- Init ---
         function checkSavedChoice() {
             const savedChoice = loadChoice();
             if (savedChoice) {
                 if (savedChoice.choice === 'caught') {
-                    showCaughtScreen(); // Show caught screen on load
+                    let daysPassed = (Date.now() - savedChoice.timestamp) / (1000 * 60 * 60 * 24);
+                    if (DEBUG_DAYS_PASSED !== null) daysPassed = DEBUG_DAYS_PASSED;
+
+                    showScreen(caughtScreen);
+                    
+                    // This logic is for subsequent visits and is correct.
+                    const newBtn = viewStarButton.cloneNode(true);
+                    viewStarButton.parentNode.replaceChild(newBtn, viewStarButton);
+                    newBtn.addEventListener('click', () => {
+                        hideScreen(caughtScreen);
+                        showStarScene(daysPassed);
+                    });
+
                 } else if (savedChoice.choice === 'free') {
-                    showLuckScreen();
+                    showScreen(luckScreen);
                 }
             } else {
-                // No choice, or choice expired
-                showIntro();
+                showScreen(introDiv);
             }
         }
         
-        checkSavedChoice(); // Run the logic on load
+        checkSavedChoice();
 
-        // --- ALL of our 3D code is now inside this function ---
-        function startScene() {
-            // (The entire, known-good three.js code from v26 is here)
+        // --- 3D SCENE ---
+        function startScene(starAgeInDays) {
             
-            // --- 1. Scene Setup (Known Good) ---
+            // --- Scoped variables for uniforms (FIXED) ---
+            let coronaUniforms = null;
+            let flareUniforms = null;
+
+            // --- STAGE CONFIG ---
+            const age = starAgeInDays || 0;
+            
+            let config = {
+                coreColor1: new THREE.Color(0xffffff),
+                coreColor2: new THREE.Color(0xffeeb5),
+                coronaColor1: new THREE.Color(0xffeeb5),
+                coronaColor2: new THREE.Color(0x00aaff),
+                flareColor1: new THREE.Color(0x80D0C0),
+                flareColor2: new THREE.Color(0xC080FF),
+                flareCountRatio: 1.0,
+                isHusk: false
+            };
+
+            if (age >= 9) {
+                // HUSK
+                config.coreColor1 = new THREE.Color(0x1a1a1a); 
+                config.coreColor2 = new THREE.Color(0x050505); 
+                config.isHusk = true;
+                config.flareCountRatio = 0.0;
+            } else if (age >= 6) {
+                // DYING
+                config.coreColor1 = new THREE.Color(0xff5500); 
+                config.coreColor2 = new THREE.Color(0x550000); 
+                config.coronaColor1 = new THREE.Color(0x550000);
+                config.coronaColor2 = new THREE.Color(0x110000);
+                config.flareColor1 = new THREE.Color(0x882200); 
+                config.flareColor2 = new THREE.Color(0x220000); 
+                config.flareCountRatio = 0.3; 
+            } else if (age >= 3) {
+                // DIMMED
+                config.coreColor1 = new THREE.Color(0xffddaa); 
+                config.coreColor2 = new THREE.Color(0xffaa00); 
+                config.coronaColor1 = new THREE.Color(0xffaa00);
+                config.coronaColor2 = new THREE.Color(0x004488); 
+                config.flareColor1 = new THREE.Color(0x408080); 
+                config.flareColor2 = new THREE.Color(0x8040aa); 
+                config.flareCountRatio = 0.7; 
+            }
+
+            // --- 1. Scene Setup ---
             const scene = new THREE.Scene();
             const renderer = new THREE.WebGLRenderer({ 
                 canvas: canvas,
@@ -361,25 +358,22 @@
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 5;
 
-            // --- 2. Controls (Known Good) ---
             const controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.5;
+            controls.autoRotateSpeed = config.isHusk ? 0.05 : 0.5;
             controls.enablePan = false;
             controls.minDistance = 3;
             controls.maxDistance = 10;
             
             const clock = new THREE.Clock();
-            
-            // --- 3. The Ethereal Star (GROUP) ---
             const starGroup = new THREE.Group();
             
-            // --- 3a. The Star Core (Known Good) ---
+            // --- 3a. Star Core ---
             const coreUniforms = {
                 uTime: { value: 0.0 },
-                uCoreColor: { value: new THREE.Color(0xffffff) },
-                uGlowColor: { value: new THREE.Color(0xffeeb5) }
+                uCoreColor: { value: config.coreColor1 },
+                uGlowColor: { value: config.coreColor2 }
             };
             const coreVertexShader = `
                 varying vec3 vPosition;
@@ -417,129 +411,110 @@
             const starCore = new THREE.Mesh(coreGeometry, coreMaterial);
             starGroup.add(starCore);
 
-            // --- 3b. The Star Corona (Known Good) ---
-            const coronaUniforms = THREE.UniformsUtils.clone(coreUniforms);
-            coronaUniforms.uCoreColor.value = new THREE.Color(0xffeeb5);
-            coronaUniforms.uGlowColor.value = new THREE.Color(0x00aaff);
-            const coronaVertexShader = `
-                varying vec3 vPosition;
-                void main() {
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `;
-            const coronaFragmentShader = `
-                precision highp float;
-                varying vec3 vPosition;
-                uniform float uTime;
-                uniform vec3 uCoreColor;
-                uniform vec3 uGlowColor;
-                void main() {
-                    float dist_sq = (vPosition.x * vPosition.x) + (vPosition.y * vPosition.y) + (vPosition.z * vPosition.z);
-                    float fade = dist_sq / 2.89; 
-                    float lump_x = vPosition.x - 0.5;
-                    float lump_y = vPosition.y + 0.3;
-                    float lump_z = vPosition.z - 0.4;
-                    float dist_sq_lump = (lump_x*lump_x + lump_y*lump_y + lump_z*lump_z);
-                    float fade_lump = dist_sq_lump / 2.0;
-                    float combined_fade = min(fade, fade_lump);
-                    float pulse = 1.0 + sin(uTime * 1.0) * 0.05;
-                    float opacity = (1.0 - pow(combined_fade * pulse, 2.0)) * 0.3;
-                    vec3 color = mix(uCoreColor, uGlowColor, combined_fade);
-                    gl_FragColor = vec4(color, opacity);
-                }
-            `;
-            const coronaGeometry = new THREE.SphereGeometry(1.7, 32, 32);
-            const coronaMaterial = new THREE.ShaderMaterial({
-                vertexShader: coronaVertexShader,
-                fragmentShader: coronaFragmentShader,
-                uniforms: coronaUniforms,
-                transparent: true,
-                depthWrite: false
-            });
-            const starCorona = new THREE.Mesh(coronaGeometry, coronaMaterial);
-            starGroup.add(starCorona);
-
-            // --- 3c. Particle Flares (Known Good) ---
-            const flareUniforms = { 
-                uTime: { value: 0.0 },
-                uFlareColor1: { value: new THREE.Color(0x80D0C0) }, // Softer Teal
-                uFlareColor2: { value: new THREE.Color(0xC080FF) }  // Softer Lavender
-            };
-            
-            const flareGeometry = new THREE.TorusGeometry(2.5, 1.0, 16, 100);
-            
-            const particleCount = flareGeometry.attributes.position.count;
-            const randoms = new Float32Array(particleCount);
-            for (let i = 0; i < particleCount; i++) {
-                randoms[i] = Math.random();
+            // --- 3b. Star Corona ---
+            if (!config.isHusk) {
+                // Define variable in outer scope
+                coronaUniforms = THREE.UniformsUtils.clone(coreUniforms);
+                coronaUniforms.uCoreColor.value = config.coronaColor1;
+                coronaUniforms.uGlowColor.value = config.coronaColor2;
+                
+                const coronaFragmentShader = `
+                    precision highp float;
+                    varying vec3 vPosition;
+                    uniform float uTime;
+                    uniform vec3 uCoreColor;
+                    uniform vec3 uGlowColor;
+                    void main() {
+                        float dist_sq = (vPosition.x * vPosition.x) + (vPosition.y * vPosition.y) + (vPosition.z * vPosition.z);
+                        float fade = dist_sq / 2.89; 
+                        float lump_x = vPosition.x - 0.5;
+                        float lump_y = vPosition.y + 0.3;
+                        float lump_z = vPosition.z - 0.4;
+                        float dist_sq_lump = (lump_x*lump_x + lump_y*lump_y + lump_z*lump_z);
+                        float fade_lump = dist_sq_lump / 2.0;
+                        float combined_fade = min(fade, fade_lump);
+                        float pulse = 1.0 + sin(uTime * 1.0) * 0.05;
+                        float opacity = (1.0 - pow(combined_fade * pulse, 2.0)) * 0.3;
+                        vec3 color = mix(uCoreColor, uGlowColor, combined_fade);
+                        gl_FragColor = vec4(color, opacity);
+                    }
+                `;
+                const coronaGeometry = new THREE.SphereGeometry(1.7, 32, 32);
+                const coronaMaterial = new THREE.ShaderMaterial({
+                    vertexShader: coreVertexShader,
+                    fragmentShader: coronaFragmentShader,
+                    uniforms: coronaUniforms,
+                    transparent: true,
+                    depthWrite: false
+                });
+                const starCorona = new THREE.Mesh(coronaGeometry, coronaMaterial);
+                starGroup.add(starCorona);
             }
-            flareGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
-            
-            const flareMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 0.05,
-                sizeAttenuation: true,
-                transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending,
-            });
 
-            flareMaterial.onBeforeCompile = (shader) => {
-                shader.uniforms.uTime = flareUniforms.uTime;
-                shader.uniforms.uFlareColor1 = flareUniforms.uFlareColor1;
-                shader.uniforms.uFlareColor2 = flareUniforms.uFlareColor2;
+            // --- 3c. Particle Flares ---
+            if (config.flareCountRatio > 0) {
+                // Define variable in outer scope
+                flareUniforms = { 
+                    uTime: { value: 0.0 },
+                    uFlareColor1: { value: config.flareColor1 },
+                    uFlareColor2: { value: config.flareColor2 }
+                };
                 
-                shader.vertexShader = 'uniform float uTime;\n' + 
-                                      'attribute float aRandom;\n' +
-                                      'varying float vLifetime;\n' +
-                                      shader.vertexShader;
+                const segments = Math.max(2, Math.floor(100 * config.flareCountRatio));
+                const flareGeometry = new THREE.TorusGeometry(2.5, 1.0, 16, segments);
                 
-                const vertexAnimationCode = `
-                    float lifetime = fract(aRandom + uTime * 0.2); 
-                    vLifetime = lifetime; 
-                    float radialSpeed = 1.0 + sin(position.x * 2.0 + uTime * 0.5) * 0.5;
-                    transformed *= radialSpeed * (0.8 + lifetime * 0.2);
-                    float wobble = sin(position.x * 5.0 + uTime) * 0.3;
-                    transformed.y += wobble; 
-                `;
+                const particleCount = flareGeometry.attributes.position.count;
+                const randoms = new Float32Array(particleCount);
+                for (let i = 0; i < particleCount; i++) randoms[i] = Math.random();
+                flareGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
                 
-                shader.vertexShader = shader.vertexShader.replace(
-                    '#include <begin_vertex>',
-                    '#include <begin_vertex>\n' + vertexAnimationCode
-                );
+                const flareMaterial = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.05,
+                    sizeAttenuation: true,
+                    transparent: true,
+                    opacity: 0.7,
+                    blending: THREE.AdditiveBlending,
+                });
 
-                shader.fragmentShader = 'uniform float uTime;\n' +
-                                        'uniform vec3 uFlareColor1;\n' +
-                                        'uniform vec3 uFlareColor2;\n' +
-                                        'varying float vLifetime;\n' +
-                                        shader.fragmentShader;
+                flareMaterial.onBeforeCompile = (shader) => {
+                    shader.uniforms.uTime = flareUniforms.uTime;
+                    shader.uniforms.uFlareColor1 = flareUniforms.uFlareColor1;
+                    shader.uniforms.uFlareColor2 = flareUniforms.uFlareColor2;
+                    
+                    shader.vertexShader = 'uniform float uTime;\nattribute float aRandom;\nvarying float vLifetime;\n' + shader.vertexShader;
+                    const vertexAnimationCode = `
+                        float lifetime = fract(aRandom + uTime * 0.2); 
+                        vLifetime = lifetime; 
+                        float radialSpeed = 1.0 + sin(position.x * 2.0 + uTime * 0.5) * 0.5;
+                        transformed *= radialSpeed * (0.8 + lifetime * 0.2);
+                        float wobble = sin(position.x * 5.0 + uTime) * 0.3;
+                        transformed.y += wobble; 
+                    `;
+                    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n' + vertexAnimationCode);
 
-                const fragmentColorCode = `
-                    vec3 finalColor = mix(uFlareColor1, uFlareColor2, vLifetime);
-                    float alpha = sin(vLifetime * 3.14159);
-                    diffuseColor = vec4(finalColor, alpha * opacity);
-                `;
+                    shader.fragmentShader = 'uniform float uTime;\nuniform vec3 uFlareColor1;\nuniform vec3 uFlareColor2;\nvarying float vLifetime;\n' + shader.fragmentShader;
+                    const fragmentColorCode = `
+                        vec3 finalColor = mix(uFlareColor1, uFlareColor2, vLifetime);
+                        float alpha = sin(vLifetime * 3.14159);
+                        diffuseColor = vec4(finalColor, alpha * opacity);
+                    `;
+                    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', fragmentColorCode);
+                };
+                
+                const flareParticles_1 = new THREE.Points(flareGeometry, flareMaterial);
+                flareParticles_1.rotation.x = 0.8; 
+                const flareParticles_2 = new THREE.Points(flareGeometry, flareMaterial);
+                flareParticles_2.rotation.x = -1.2;
+                flareParticles_2.rotation.y = -0.5;
 
-                shader.fragmentShader = shader.fragmentShader.replace(
-                    '#include <color_fragment>',
-                    fragmentColorCode
-                );
-            };
-            
-            const flareParticles_1 = new THREE.Points(flareGeometry, flareMaterial);
-            flareParticles_1.rotation.x = 0.8; 
-            
-            const flareParticles_2 = new THREE.Points(flareGeometry, flareMaterial);
-            flareParticles_2.rotation.x = -1.2;
-            flareParticles_2.rotation.y = -0.5;
-
-            starGroup.add(flareParticles_1);
-            starGroup.add(flareParticles_2); 
+                starGroup.add(flareParticles_1);
+                starGroup.add(flareParticles_2); 
+            }
 
             scene.add(starGroup);
 
-            // --- 4. Stardust (Known Good) ---
+            // --- 4. Stardust ---
             const bgParticleCount = 5000;
             const positions = new Float32Array(bgParticleCount * 3);
             for (let i = 0; i < bgParticleCount; i++) {
@@ -554,19 +529,21 @@
                 size: 0.02,
                 sizeAttenuation: true,
                 transparent: true,
-                opacity: 0.6
+                opacity: config.isHusk ? 0.2 : 0.6
             });
             const stardust = new THREE.Points(particleGeometry, particleMaterial);
             scene.add(stardust);
 
-            // --- 5. Animation Loop (Known Good) ---
+            // --- 5. Animation Loop ---
             function animate() {
                 requestAnimationFrame(animate);
                 const elapsedTime = clock.getElapsedTime();
                 
                 coreUniforms.uTime.value = elapsedTime;
-                coronaUniforms.uTime.value = elapsedTime;
-                flareUniforms.uTime.value = elapsedTime; 
+                
+                // Only update if they exist (i.e. not Husk)
+                if (coronaUniforms) coronaUniforms.uTime.value = elapsedTime;
+                if (flareUniforms) flareUniforms.uTime.value = elapsedTime;
 
                 stardust.rotation.y += 0.0005;
                 starGroup.rotation.y += 0.001; 
@@ -575,7 +552,7 @@
                 renderer.render(scene, camera);
             }
 
-            // --- 6. Resize Handling (Known Good) ---
+            // --- 6. Resize ---
             function onWindowResize() {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
